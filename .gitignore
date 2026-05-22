@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+token.json
+credentials.json
+staging/
+output/
+*.js.map
+*.code-workspace

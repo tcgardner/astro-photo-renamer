@@ -1,0 +1,28 @@
+{
+  "name": "astro-photo-renamer",
+  "version": "1.0.0",
+  "description": "Download a Google Photos album and rename astrophotos by catalog identifier.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "tsx src/main.ts",
+    "test": "node --import tsx/esm --test src/rename.test.ts src/logger.test.ts src/downloadCache.test.ts src/identify/pipeline.test.ts src/identify/aiVision.test.ts src/identify/catalogLookup.test.ts src/identify/exifProbe.test.ts"
+  },
+  "dependencies": {
+    "@google-cloud/local-auth": "^3.0.1",
+    "@google/genai": "^2.6.0",
+    "cli-progress": "^3.12.0",
+    "commander": "^12.0.0",
+    "dotenv": "^16.4.0",
+    "exifreader": "^4.23.0",
+    "google-auth-library": "^9.14.0",
+    "open": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/cli-progress": "^3.11.6",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}
