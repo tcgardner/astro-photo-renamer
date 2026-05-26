@@ -31,6 +31,7 @@ class Config {
   readonly plateSolveTimeout: number;
   readonly skipExisting: boolean;
   readonly downloadCacheFile: string;
+  readonly astroDbUrl: string;
 
   constructor() {
     this.gphotoCred = optional('GPHOTO_CREDENTIALS_FILE', 'credentials.json');
@@ -45,6 +46,7 @@ class Config {
     this.plateSolveTimeout = parseInt_('PLATE_SOLVE_TIMEOUT_SECONDS', 180);
     this.skipExisting = parseBool('SKIP_EXISTING', true);
     this.downloadCacheFile = optional('DOWNLOAD_CACHE_FILE', './output/download_cache.json');
+    this.astroDbUrl = optional('ASTRO_DB_URL', 'http://localhost:3001');
   }
 
   ensureDirs(): void {

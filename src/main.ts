@@ -8,6 +8,7 @@ import { RunLogger } from './logger.js';
 import * as gphoto from './gphoto.js';
 import * as pipeline from './identify/pipeline.js';
 import * as rename from './rename.js';
+import * as astroDb from './astroDb.js';
 
 function findImages(dir: string): string[] {
   if (!existsSync(dir)) return [];
@@ -60,6 +61,19 @@ async function cmdIdentifyAndRename(stagedFiles: string[]): Promise<void> {
         destFile: path.basename(dest),
         success: true,
       });
+
+      if (!cfg.dryRun) {
+        void astroDb.registerImage(cfg.astroDbUrl, {
+          catalog_id:        result.messier ?? result.caldwell ?? result.ngc ?? result.ic!,
+          filename:          path.basename(dest),
+          original_filename: path.basename(imgPath),
+          file_path:         dest,
+          id_stage:          result.stage,
+          processed_at:      new Date().toISOString(),
+          captured_at:       result.capturedAt ?? undefined,
+          common_name:       result.commonName ?? undefined,
+        }).catch(err => logger.warn(`  DB registration skipped: ${(err as Error).message}`));
+      }
     } else {
       const dest = rename.moveUnresolved(imgPath, cfg.unresolvedDir, cfg.dryRun);
       runLog.record({
