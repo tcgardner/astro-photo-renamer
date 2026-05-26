@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { existsSync, readdirSync } from 'fs';
+import { existsSync, readdirSync, unlinkSync } from 'fs';
 import * as path from 'path';
 import { cfg } from './config.js';
 import * as logger from './logger.js';
@@ -13,9 +13,19 @@ import * as astroDb from './astroDb.js';
 function findImages(dir: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
-    .filter(f => /\.(jpg|jpeg)$/i.test(f))
+    .filter(f => /\.(jpg|jpeg|png)$/i.test(f))
     .map(f => path.join(dir, f))
     .sort();
+}
+
+// Pre-populate `seen` with existing filenames from astro-db for a given catalog entry.
+async function populateSeen(catalogId: string, seen: Map<string, number>): Promise<void> {
+  const filenames = await astroDb.getExistingFilenames(cfg.astroDbUrl, catalogId).catch(() => []);
+  for (const filename of filenames) {
+    const stem = path.basename(filename, path.extname(filename));
+    const base = stem.replace(/_\d{2}$/, '');
+    seen.set(base, (seen.get(base) ?? 0) + 1);
+  }
 }
 
 async function cmdDownload(): Promise<void> {
@@ -28,15 +38,7 @@ async function cmdIdentifyAndRename(stagedFiles: string[]): Promise<void> {
   cfg.ensureDirs();
   const runLog = new RunLogger(cfg.outputDir);
   const seen = new Map<string, number>();
-
-  // Pre-populate seen from resolved/ to handle re-runs.
-  if (existsSync(cfg.resolvedDir)) {
-    for (const f of readdirSync(cfg.resolvedDir)) {
-      const stem = path.basename(f, path.extname(f));
-      const base = stem.replace(/_\d{2}$/, '');
-      seen.set(base, (seen.get(base) ?? 0) + 1);
-    }
-  }
+  const seenPopulated = new Set<string>();
 
   for (const imgPath of stagedFiles) {
     if (!existsSync(imgPath)) {
@@ -52,27 +54,64 @@ async function cmdIdentifyAndRename(stagedFiles: string[]): Promise<void> {
     });
 
     if (result.resolved) {
-      const dest = rename.moveResolved(imgPath, result, cfg.resolvedDir, seen, cfg.dryRun);
-      runLog.record({
-        sourceFile: path.basename(imgPath),
-        stage: result.stage,
-        identifier: result.messier ?? result.caldwell ?? result.ngc ?? result.ic,
-        commonName: result.commonName,
-        destFile: path.basename(dest),
-        success: true,
-      });
+      // Normalize: strip spaces so stored catalog_id is always spaceless (e.g. "NGC2024" not "NGC 2024").
+      const catalogId = (result.messier ?? result.caldwell ?? result.ngc ?? result.ic!).replace(/\s+/g, '');
 
-      if (!cfg.dryRun) {
-        void astroDb.registerImage(cfg.astroDbUrl, {
-          catalog_id:        result.messier ?? result.caldwell ?? result.ngc ?? result.ic!,
-          filename:          path.basename(dest),
+      // Lazy: pre-populate seen from astro-db the first time we encounter this catalog entry.
+      if (!seenPopulated.has(catalogId) && !cfg.dryRun) {
+        await populateSeen(catalogId, seen);
+        seenPopulated.add(catalogId);
+      }
+
+      const baseName  = rename.buildBaseName(result);
+      const ext       = path.extname(imgPath).toLowerCase();
+      const destFilename = rename.resolveFilename(baseName, ext, seen);
+
+      if (cfg.dryRun) {
+        logger.info(`  [dry-run] Would upload → ${destFilename}`);
+        runLog.record({
+          sourceFile: path.basename(imgPath),
+          stage: result.stage,
+          identifier: catalogId,
+          commonName: result.commonName,
+          destFile: destFilename,
+          success: true,
+        });
+        continue;
+      }
+
+      try {
+        const uploaded = await astroDb.uploadImage(cfg.astroDbUrl, imgPath, {
+          catalog_id:        catalogId,
+          filename:          destFilename,
           original_filename: path.basename(imgPath),
-          file_path:         dest,
           id_stage:          result.stage,
           processed_at:      new Date().toISOString(),
           captured_at:       result.capturedAt ?? undefined,
           common_name:       result.commonName ?? undefined,
-        }).catch(err => logger.warn(`  DB registration skipped: ${(err as Error).message}`));
+        });
+
+        unlinkSync(imgPath);
+        logger.success(`  Uploaded → ${destFilename} (id=${uploaded.id})`);
+
+        runLog.record({
+          sourceFile: path.basename(imgPath),
+          stage: result.stage,
+          identifier: catalogId,
+          commonName: result.commonName,
+          destFile: destFilename,
+          success: true,
+        });
+      } catch (err: any) {
+        logger.warn(`  Upload failed: ${(err as Error).message} — file kept in staging`);
+        runLog.record({
+          sourceFile: path.basename(imgPath),
+          stage: result.stage,
+          identifier: catalogId,
+          commonName: result.commonName,
+          destFile: destFilename,
+          success: false,
+        });
       }
     } else {
       const dest = rename.moveUnresolved(imgPath, cfg.unresolvedDir, cfg.dryRun);
@@ -111,12 +150,12 @@ async function cmdRun(local: boolean): Promise<void> {
   await cmdIdentifyAndRename(staged);
 }
 
-if (cfg.dryRun) logger.warn('DRY_RUN=true — no files will be moved or renamed.');
+if (cfg.dryRun) logger.warn('DRY_RUN=true — no files will be uploaded or removed.');
 
 const program = new Command();
 program
   .name('astro-photo-renamer')
-  .description('Select photos via Google Photos Picker and rename astrophotos by catalog identifier.');
+  .description('Select photos via Google Photos Picker, identify, and upload to astro-db.');
 
 program
   .command('download')
@@ -127,7 +166,7 @@ program
 
 program
   .command('identify')
-  .description('Run identification pipeline on staged images.')
+  .description('Run identification pipeline on staged images and upload to astro-db.')
   .action(async () => {
     const staged = findImages(cfg.stagingDir);
     if (!staged.length) {
@@ -140,14 +179,14 @@ program
 
 program
   .command('rename')
-  .description("Rename already-identified images (alias for 'identify').")
+  .description("Alias for 'identify'.")
   .action(async () => {
     await cmdIdentifyAndRename(findImages(cfg.stagingDir));
   });
 
 program
   .command('run')
-  .description('Open picker, download, identify, and rename in one shot.')
+  .description('Open picker, download, identify, and upload in one shot.')
   .option('--local', 'Skip download; process images already in staging/', false)
   .action(async (opts: { local: boolean }) => {
     await cmdRun(opts.local);

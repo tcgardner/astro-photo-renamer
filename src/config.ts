@@ -50,7 +50,7 @@ class Config {
   }
 
   ensureDirs(): void {
-    for (const dir of [this.stagingDir, this.resolvedDir, this.unresolvedDir]) {
+    for (const dir of [this.stagingDir, this.unresolvedDir]) {
       mkdirSync(dir, { recursive: true });
     }
   }

@@ -20,17 +20,26 @@ function sanitize(text: string): string {
   return text.replace(/^_+|_+$/g, '');
 }
 
+// Returns just the filename (no directory prefix). Increments the seen counter.
+export function resolveFilename(
+  baseName: string,
+  suffix: string,
+  seen: Map<string, number>,
+): string {
+  const count = (seen.get(baseName) ?? 0) + 1;
+  seen.set(baseName, count);
+  return count === 1
+    ? `${baseName}${suffix}`
+    : `${baseName}_${String(count).padStart(2, '0')}${suffix}`;
+}
+
 export function resolveDest(
   baseName: string,
   suffix: string,
   resolvedDir: string,
   seen: Map<string, number>,
 ): string {
-  const count = (seen.get(baseName) ?? 0) + 1;
-  seen.set(baseName, count);
-  const filename =
-    count === 1 ? `${baseName}${suffix}` : `${baseName}_${String(count).padStart(2, '0')}${suffix}`;
-  return path.join(resolvedDir, filename);
+  return path.join(resolvedDir, resolveFilename(baseName, suffix, seen));
 }
 
 function moveFile(src: string, dest: string): void {
