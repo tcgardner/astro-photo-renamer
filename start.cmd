@@ -5,6 +5,14 @@ echo -- astro-photo-renamer --
 
 where node >nul 2>&1 || echo Warning: Node.js is not installed.
 
+for /f "tokens=*" %%v in ('node --version 2^>nul') do set NODE_VER=%%v
+if defined NODE_VER (
+    for /f "tokens=1 delims=." %%m in ("%NODE_VER:v=%") do set NODE_MAJOR=%%m
+    if %NODE_MAJOR% LSS 24 (
+        echo Warning: Node.js 24+ required ^(found %NODE_VER%^).
+    )
+)
+
 if not exist .env echo Warning: .env not found. Run: copy .env.example .env
 
 if not exist credentials.json (

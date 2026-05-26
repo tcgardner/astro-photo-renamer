@@ -9,8 +9,8 @@ echo "── astro-photo-renamer ───────────────�
 # 1. Node version (≥20 required)
 if ! command -v node &>/dev/null; then
   echo "⚠  Warning: Node.js is not installed." >&2
-elif [[ $(node --version | sed 's/v//' | cut -d. -f1) -lt 20 ]]; then
-  echo "⚠  Warning: Node.js 20+ required (found $(node --version))." >&2
+elif [[ $(node --version | sed 's/v//' | cut -d. -f1) -lt 24 ]]; then
+  echo "⚠  Warning: Node.js 24+ required (found $(node --version))." >&2
 fi
 
 # 2. .env

@@ -9,8 +9,8 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
     Write-Warning "Node.js is not installed."
 } else {
     $nodeVer = (node --version) -replace '^v', ''
-    if ([int]($nodeVer.Split('.')[0]) -lt 20) {
-        Write-Warning "Node.js 20+ required (found v$nodeVer)."
+    if ([int]($nodeVer.Split('.')[0]) -lt 24) {
+        Write-Warning "Node.js 24+ required (found v$nodeVer)."
     }
 }
 

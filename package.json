@@ -9,6 +9,9 @@
     "dev": "tsx src/main.ts",
     "test": "node --import tsx/esm --test src/rename.test.ts src/logger.test.ts src/downloadCache.test.ts src/identify/pipeline.test.ts src/identify/aiVision.test.ts src/identify/catalogLookup.test.ts src/identify/exifProbe.test.ts"
   },
+  "engines": {
+    "node": ">=24"
+  },
   "dependencies": {
     "@google-cloud/local-auth": "^3.0.1",
     "@google/genai": "^2.6.0",
