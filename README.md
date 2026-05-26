@@ -24,6 +24,8 @@ A CLI tool that selects astrophotos from Google Photos via the Picker API and au
 
 ## Setup
 
+> **Quick note on `start.*` scripts:** `start.sh`, `start.ps1`, and `start.cmd` are included in this directory. They run pre-flight checks (Node version, `.env`, `credentials.json`) and print usage, then exit. This tool has no server to start — use `npm run dev -- <command>` directly.
+
 ```bash
 npm install
 ```
