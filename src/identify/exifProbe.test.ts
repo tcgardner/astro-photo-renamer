@@ -5,7 +5,7 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import { probe } from './exifProbe.js';
 
-const NULL_RESULT = { catalogName: null, ra: null, dec: null };
+const NULL_RESULT = { catalogName: null, ra: null, dec: null, capturedAt: null };
 
 describe('probe', () => {
   test('returns null result for non-existent file', () => {

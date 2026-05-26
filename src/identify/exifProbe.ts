@@ -3,8 +3,9 @@ import { readFileSync } from 'fs';
 
 export interface ExifResult {
   catalogName: string | null;
-  ra: number | null;
-  dec: number | null;
+  ra:          number | null;
+  dec:         number | null;
+  capturedAt:  string | null;
 }
 
 const CATALOG_RE = /\b(M\s*\d{1,3}|NGC\s*\d{1,4}|IC\s*\d{1,4}|C\s*\d{1,3})\b/i;
@@ -22,14 +23,14 @@ export function probe(imagePath: string): ExifResult {
   try {
     buf = readFileSync(imagePath);
   } catch {
-    return { catalogName: null, ra: null, dec: null };
+    return { catalogName: null, ra: null, dec: null, capturedAt: null };
   }
 
   let tags: unknown;
   try {
     tags = ExifReader.load(buf, { expanded: true });
   } catch {
-    return { catalogName: null, ra: null, dec: null };
+    return { catalogName: null, ra: null, dec: null, capturedAt: null };
   }
 
   const textBlobs: string[] = [];
@@ -71,5 +72,15 @@ export function probe(imagePath: string): ExifResult {
     }
   }
 
-  return { catalogName, ra, dec };
+  // Extract capture date from EXIF DateTimeOriginal or DateTime: "YYYY:MM:DD HH:MM:SS"
+  let capturedAt: string | null = null;
+  if (exif) {
+    const raw = exif['DateTimeOriginal']?.description ?? exif['DateTime']?.description;
+    if (typeof raw === 'string') {
+      const m = /^(\d{4}):(\d{2}):(\d{2})/.exec(raw);
+      if (m) capturedAt = `${m[1]}-${m[2]}-${m[3]}`;
+    }
+  }
+
+  return { catalogName, ra, dec, capturedAt };
 }

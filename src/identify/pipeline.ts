@@ -5,13 +5,14 @@ import * as aiVision from './aiVision.js';
 import * as logger from '../logger.js';
 
 export interface IdentifyResult {
-  messier: string | null;
-  caldwell: string | null;
-  ngc: string | null;
-  ic: string | null;
+  messier:    string | null;
+  caldwell:   string | null;
+  ngc:        string | null;
+  ic:         string | null;
   commonName: string | null;
-  stage: string;
-  resolved: boolean;
+  stage:      string;
+  resolved:   boolean;
+  capturedAt: string | null;
 }
 
 type CatalogFields = Pick<IdentifyResult, 'messier' | 'caldwell' | 'ngc' | 'ic'>;
@@ -55,11 +56,12 @@ export async function run(imagePath: string, opts: RunOptions): Promise<Identify
   // ── Layer 1: EXIF probe ──────────────────────────────────────────────────
   logger.info(`[L1-EXIF] ${imgName}`);
   const exif = exifProbe.probe(imagePath);
+  const capturedAt = exif.capturedAt;
 
   if (exif.catalogName) {
     const fields = catalogNameToFields(exif.catalogName);
     logger.success(`  Resolved via EXIF: ${exif.catalogName}`);
-    return { ...fields, commonName: null, stage: 'exif', resolved: true };
+    return { ...fields, commonName: null, stage: 'exif', resolved: true, capturedAt };
   }
 
   let ra = exif.ra;
@@ -79,7 +81,7 @@ export async function run(imagePath: string, opts: RunOptions): Promise<Identify
     if (merged) {
       const label = merged.messier ?? merged.caldwell ?? merged.ngc ?? merged.ic;
       logger.success(`  Resolved via plate solve objects_in_field: ${label}`);
-      return { ...merged, commonName: null, stage: 'plate_solve', resolved: true };
+      return { ...merged, commonName: null, stage: 'plate_solve', resolved: true, capturedAt };
     }
 
     ra = ps.ra;
@@ -106,6 +108,7 @@ export async function run(imagePath: string, opts: RunOptions): Promise<Identify
         commonName: cat.commonName,
         stage: `${stagePrefix}+catalog`,
         resolved: true,
+        capturedAt,
       };
     }
   }
@@ -130,6 +133,7 @@ export async function run(imagePath: string, opts: RunOptions): Promise<Identify
       commonName: vis.commonName,
       stage: 'ai_vision',
       resolved: true,
+      capturedAt,
     };
   }
 
@@ -137,6 +141,6 @@ export async function run(imagePath: string, opts: RunOptions): Promise<Identify
   logger.warn(`  Unresolved: ${imgName}`);
   return {
     messier: null, caldwell: null, ngc: null, ic: null,
-    commonName: null, stage: 'unresolved', resolved: false,
+    commonName: null, stage: 'unresolved', resolved: false, capturedAt,
   };
 }

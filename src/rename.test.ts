@@ -9,7 +9,7 @@ import type { IdentifyResult } from './identify/pipeline.js';
 function result(overrides: Partial<IdentifyResult> = {}): IdentifyResult {
   return {
     messier: null, caldwell: null, ngc: null, ic: null,
-    commonName: null, stage: 'exif', resolved: true,
+    commonName: null, stage: 'exif', resolved: true, capturedAt: null,
     ...overrides,
   };
 }
