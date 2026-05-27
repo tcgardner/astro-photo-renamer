@@ -34,7 +34,7 @@ Write-Host ""
 Write-Host "astro-photo-renamer is a CLI tool — there is no server to start." -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Usage:"
-Write-Host "  npm run dev -- <command> [options]"
+Write-Host "  npm run start -- <command> [options]"
 Write-Host ""
 Write-Host "Commands:"
 Write-Host "  run            Download + identify + rename in one shot"
@@ -43,9 +43,9 @@ Write-Host "  download       Open Google Photos Picker and download selected ima
 Write-Host "  identify       Identify and rename images already in staging/"
 Write-Host ""
 Write-Host "Examples:"
-Write-Host "  npm run dev -- run"
-Write-Host "  npm run dev -- run --local"
-Write-Host '  $env:DRY_RUN="true"; npm run dev -- run --local'
+Write-Host "  npm run start -- run"
+Write-Host "  npm run start -- run --local"
+Write-Host '  $env:DRY_RUN="true"; npm run start -- run --local'
 Write-Host ""
 
 exit 1

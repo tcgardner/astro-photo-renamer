@@ -28,7 +28,7 @@ echo.
 echo astro-photo-renamer is a CLI tool -- there is no server to start.
 echo.
 echo Usage:
-echo   npm run dev -- ^<command^> [options]
+echo   npm run start -- ^<command^> [options]
 echo.
 echo Commands:
 echo   run            Download + identify + rename in one shot
@@ -37,8 +37,8 @@ echo   download       Open Google Photos Picker and download selected images
 echo   identify       Identify and rename images already in staging/
 echo.
 echo Examples:
-echo   npm run dev -- run
-echo   npm run dev -- run --local
+echo   npm run start -- run
+echo   npm run start -- run --local
 echo.
 
 exit /b 1

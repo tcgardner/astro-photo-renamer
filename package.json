@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/main.js",
+    "start": "tsx src/main.ts",
     "dev": "tsx src/main.ts",
     "test": "node --import tsx/esm --test src/rename.test.ts src/logger.test.ts src/downloadCache.test.ts src/identify/pipeline.test.ts src/identify/aiVision.test.ts src/identify/catalogLookup.test.ts src/identify/exifProbe.test.ts"
   },
